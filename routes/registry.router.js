@@ -9,6 +9,12 @@ router.get('/', async (req, res) => {
   res.json(registries);
 });
 
+router.get('/:id', async (req, res) => {
+  const { id } = req.params;
+  const registries = await registryService.getByCategory(id);
+  res.json(registries);
+});
+
 router.post('/', async (req, res) => {
   const registry = await registryService.create(req.body);
   res.json(registry);

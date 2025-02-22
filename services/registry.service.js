@@ -6,6 +6,19 @@ class RegistryService {
     return rows;
   }
 
+  async getByCategory(id) {
+    try {
+      const { rows } = await pool.query(
+        'SELECT * FROM Registry WHERE category = $1',
+        [id]
+      );
+      return rows;
+    } catch (error) {
+      console.error('Error al obtener registros por categoría:', error);
+      throw error;
+    }
+  }
+
   async create(data) {
     const { description, id_category } = data;
     const { rows } = await pool.query(
