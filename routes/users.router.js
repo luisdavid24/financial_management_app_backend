@@ -18,7 +18,6 @@ router.post('/login', async (req, res) => {
   const { username, password } = req.body
   try {
     const user = await UserService.login({ username, password })
-    console.log(user);
     /* jwt.sign(payload, secretOrPrivateKey, [options, callback])
     payload=> objecto que contiene informacion que queremos incluir en el token
     secretOrPrivateKey =>Es una clave secreta utilizada para firmar el token. */
