@@ -1,59 +1,70 @@
-const express = require('express');
-const router = express.Router();
-const userService = require('../services/users.services');
+const express = require('express')
+const UserService = require('../services/users.services.js')
+const  {SECRET_JWT_KEY }= require('../config.js');
+const jwt = require('jsonwebtoken')
+const router = express.Router()
 
-router.get('/', async (req, res) => {
-  try {
-    const users = await userService.getUsers();
-    res.json(users);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+
+router.use((req, res, next) => {
+  const token = req.cookies.access_token
+  req.session = { user: null }
+
+  if (token) {
+    try {
+      const data = jwt.verify(token, SECRET_JWT_KEY)
+      req.session.user = data
+    } catch (error) {
+      console.error('Invalid token:', error.message)
+    }
   }
-});
+  next()
+})
 
-router.get('/:id', async (req, res) => {
+router.get('/', (req, res) => {
+  res.json({ message: 'API is running' })
+})
+
+router.post('/login', async (req, res) => {
+  const { username, password } = req.body
   try {
-    const user = await userService.getUserById(req.params.id);
-    if (!user)
-      return res.status(404).json({ message: 'Usuario no encontrado' });
-    res.json(user);
+    const user = await UserService.login({ username, password })
+    const token = jwt.sign({ id: user._id, username: user.username }, SECRET_JWT_KEY, {
+      expiresIn: '1h'
+    })
+    res
+      .cookie('access_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 1000 * 60 * 60
+      })
+      .json({ user, token })
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(401).json({ error: error.message })
   }
-});
+})
 
-router.post('/', async (req, res) => {
+router.post('/register', async (req, res) => {
+  const { name,username, password } = req.body
   try {
-    const { name, email, password } = req.body;
-    const newUser = await userService.createUser(name, email, password);
-    res.status(201).json(newUser);
+    const id = await UserService.create({ username, password,name })
+    res.json({ id })
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(400).json({ error: error.message })
   }
-});
+})
 
-router.put('/:id', async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-    const updatedUser = await userService.updateUser(
-      req.params.id,
-      name,
-      email,
-      password
-    );
-    res.json(updatedUser);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+router.post('/logout', (req, res) => {
+  res.clearCookie('access_token').json({ message: 'Logout successful' })
+})
 
-router.delete('/:id', async (req, res) => {
-  try {
-    const message = await userService.deleteUser(req.params.id);
-    res.json(message);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+router.get('/protected', (req, res) => {
+  if (!req.session.user) return res.status(403).json({ error: 'Access not authorized' })
+  res.json({ user: req.session.user })
+})
 
-module.exports = router;
+
+
+module.exports = router
+
+

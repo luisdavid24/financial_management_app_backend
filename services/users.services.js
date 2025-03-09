@@ -1,34 +1,56 @@
 const pool = require('../libs/db.js');
+const crypto = require('crypto');
+const bcrypt = require('bcrypt');
+const Validation = require('../schemas/validation.js');
 
-const getUsers = async () => {
-  const result = await pool.query('SELECT * FROM Users');
-  return result.rows;
-};
+class UserService {
+  static async create({ username, password,name  }) {
+    Validation.username(username);
+    Validation.name(name);
+    Validation.password(password);
 
-const getUserById = async (id) => {
-  const result = await pool.query('SELECT * FROM Users WHERE id = $1', [id]);
-  return result.rows[0];
-};
+    const client = await pool.connect();
+    try {
+      // Verificar si el usuario o el nombre ya existen
+      const userExists = await client.query('SELECT username FROM Users WHERE username = $1 OR name = $2', [username, name]);
+      if (userExists.rowCount > 0) throw new Error('username or name already exists');
 
-const createUser = async (name, email, password) => {
-  const result = await pool.query(
-    'INSERT INTO Users (name, email, password) VALUES ($1, $2, $3) RETURNING *',
-    [name, email, password]
-  );
-  return result.rows[0];
-};
+      // Hashear la contraseña antes de guardarla
+      const hashedPassword = await bcrypt.hash(password, 10);
 
-const updateUser = async (id, name, email, password) => {
-  const result = await pool.query(
-    'UPDATE Users SET name = $1, email = $2, password = $3 WHERE id = $4 RETURNING *',
-    [name, email, password, id]
-  );
-  return result.rows[0];
-};
+      // Insertar el usuario en la base de datos
+      await client.query(
+        'INSERT INTO Users (username, name, password) VALUES ($1, $2, $3)',
+        [username, name, hashedPassword]
+      );
 
-const deleteUser = async (id) => {
-  await pool.query('DELETE FROM Users WHERE id = $1', [id]);
-  return { message: `Usuario con ID ${id} eliminado` };
-};
+      return { username, name };
+    } finally {
+      client.release();
+    }
+  }
 
-module.exports = { getUsers, getUserById, createUser, updateUser, deleteUser };
+  static async login({ username, password }) {
+    Validation.username(username);
+    Validation.password(password);
+
+    const client = await pool.connect();
+    try {
+      const result = await client.query('SELECT * FROM Users WHERE username = $1', [username]);
+      if (result.rowCount === 0) throw new Error('User not found');
+
+      const user = result.rows[0];
+      const isValid = await bcrypt.compare(password, user.password);
+
+      if (!isValid) throw new Error('Password is invalid');
+
+      // Retornar la información sin la contraseña
+      const { password: _, ...publicUser } = user;
+      return publicUser;
+    } finally {
+      client.release();
+    }
+  }
+}
+
+module.exports = UserService;

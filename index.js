@@ -1,28 +1,26 @@
-const express = require('express');
-const cors = require('cors');
+/* const userRoutes = require('./routes/user.routes') */
+const express = require('express')
+const cors = require('cors')
+const cookieParser = require('cookie-parser')
+const jwt = require('jsonwebtoken')
+const { PORT, SECRET_JWT_KEY } = require('./config.js')
 const routerApi = require('./routes/index.js');
 
-const app = express();
-const PORT = 3001;
-app.use(express.json());
+const app = express()
 
-const whitelist = ['http://localhost:3000'];
-const options = {
-  origin: (origin, callback) => {
-    if (whitelist.includes(origin) || !origin) {
-      callback(null, true);
-    } else {
-      callback(new Error('no permitido'));
-    }
-  },
-};
-app.use(cors(options));
+app.use(cors({ origin: 'http://localhost:5173', credentials: true }))
+app.use(express.json())
+app.use(cookieParser())
+
+
+
+app.get('/', (req, res) => {
+  res.json({ message: 'API is running' })
+})
 
 routerApi(app);
 
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
-});
-app.get('/', (req, res) => {
-  res.send('Hola mi server en express');
-});
+  console.log(`Server running on port ${PORT}`)
+})
+
