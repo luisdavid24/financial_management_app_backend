@@ -3,23 +3,12 @@ const UserService = require('../services/users.services.js')
 const  {SECRET_JWT_KEY }= require('../config.js');
 const jwt = require('jsonwebtoken')
 const router = express.Router()
+const verifyUser=require('../middlewares/auth.middleware.js')
 
-/* Este es un middleware que se encarga de verificar que el usuario este
-verificado */
-router.use((req, res, next) => {
-  const token = req.cookies.access_token
-  req.session = { user: null }
+// Usa el middleware en todas las rutas
+router.use(verifyUser);
 
-  if (token) {
-    try {
-      const data = jwt.verify(token, SECRET_JWT_KEY)
-      req.session.user = data
-    } catch (error) {
-      console.error('Invalid token:', error.message)
-    }
-  }
-  next()
-})
+
 
 router.get('/', (req, res) => {
   res.json({ message: 'API is running' })
@@ -33,7 +22,7 @@ router.post('/login', async (req, res) => {
     /* jwt.sign(payload, secretOrPrivateKey, [options, callback])
     payload=> objecto que contiene informacion que queremos incluir en el token
     secretOrPrivateKey =>Es una clave secreta utilizada para firmar el token. */
-    const token = jwt.sign({ id: id, username: user.username }, SECRET_JWT_KEY, {
+    const token = jwt.sign({ id: user.id, username: user.username }, SECRET_JWT_KEY, {
       expiresIn: '1h'
     })
     res
