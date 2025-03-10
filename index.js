@@ -8,7 +8,16 @@ const routerApi = require('./routes/index.js');
 
 const app = express()
 
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }))
+
+const whitelist = ['http://localhost:3000']; // Solo el frontend
+const options = {
+  origin: whitelist,
+  credentials: true, // 💡 Habilita el uso de cookies
+};
+
+app.use(cors(options));
+
+
 app.use(express.json())
 app.use(cookieParser())
 
