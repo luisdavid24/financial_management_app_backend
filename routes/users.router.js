@@ -5,14 +5,10 @@ const jwt = require('jsonwebtoken')
 const router = express.Router()
 const verifyUser=require('../middlewares/auth.middleware.js')
 
-// Usa el middleware en todas las rutas
+
 router.use(verifyUser);
 
 
-
-router.get('/', (req, res) => {
-  res.json({ message: 'API is running' })
-})
 
 router.post('/login', async (req, res) => {
   const { username, password } = req.body
