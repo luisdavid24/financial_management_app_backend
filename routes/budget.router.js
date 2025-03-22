@@ -41,7 +41,6 @@ router.put('/:id', async (req, res) => {
   const { error }= budgetSchema.budgetPut.validate(req.body)
   if (error) return res.status(400).json({ error: error.details[0].message });
 
-
   try {
     const budget = await BudgetService.update(req.params.id, req.body);
     res.json(budget);
