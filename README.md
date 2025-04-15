@@ -1,0 +1,57 @@
+
+ ```sql
+DROP TABLE IF EXISTS Registry CASCADE;
+DROP TABLE IF EXISTS Category CASCADE;
+DROP TABLE IF EXISTS Budget CASCADE;
+DROP TABLE IF EXISTS Time CASCADE;
+DROP TABLE IF EXISTS Users CASCADE;
+
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+CREATE TABLE Users (
+    id_User UUID PRIMARY KEY DEFAULT uuid_generate_v4(), 
+    userName VARCHAR(100) UNIQUE NOT NULL,   
+    name VARCHAR(100) NOT NULL,              
+    password VARCHAR(255) NOT NULL           
+);
+
+CREATE TABLE Time (
+    id_Time UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    year INTEGER NOT NULL CHECK (year >= 2000 AND year <= 2100),
+    month INTEGER NOT NULL CHECK (month BETWEEN 1 AND 12),
+    id_User UUID NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_User) REFERENCES Users(id_User) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Budget (
+    id_Budget UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(100) NOT NULL,
+    id_time UUID NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_time) REFERENCES Time(id_Time) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Category (
+    id_Category UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(100) NOT NULL,
+    Assets BOOLEAN NOT NULL,
+    Liabilities BOOLEAN NOT NULL,
+    Equity BOOLEAN NOT NULL,
+    id_Budget UUID NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_Budget) REFERENCES Budget(id_Budget) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Registry (
+    id_Registry UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(100) NOT NULL,
+    Description VARCHAR(200),
+    Amount FLOAT NOT NULL,
+    id_Category UUID NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_Category) REFERENCES Category(id_Category) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+
+```
